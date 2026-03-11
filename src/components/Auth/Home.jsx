@@ -15,11 +15,18 @@ const Home = () => {
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('Food');
+    const [listLoading, setListLoading] = useState(true);
+    const [addLoading, setAddLoading] = useState(false);
 
     const categories = ['Food', 'Petrol', 'Rent', 'Entertainment', 'Shopping', 'Health', 'Other'];
+    const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/sh-p-f50d3/databases/(default)/documents/expense`;
 
     useEffect(() => {
-        fetchUserData();
+        const init = async () => {
+            await fetchUserData();
+            await fetchExpenses();
+        };
+        init();
     }, []);
 
     const fetchUserData = async () => {
@@ -37,6 +44,30 @@ const Home = () => {
             console.error('Error fetching user data:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchExpenses = async () => {
+        setListLoading(true);
+        try {
+            const response = await axios.get(FIRESTORE_URL);
+            if (response.data.documents) {
+                const loadedExpenses = response.data.documents.map(doc => {
+                    const fields = doc.fields;
+                    return {
+                        id: doc.name.split('/').pop(),
+                        amount: parseFloat(fields.amount?.doubleValue || fields.amount?.integerValue || 0),
+                        description: fields.description?.stringValue || '',
+                        category: fields.category?.stringValue || 'Other',
+                        date: fields.date?.stringValue || ''
+                    };
+                });
+                setExpenses(loadedExpenses);
+            }
+        } catch (err) {
+            console.error('Error fetching expenses:', err);
+        } finally {
+            setListLoading(false);
         }
     };
 
@@ -66,22 +97,42 @@ const Home = () => {
         }
     };
 
-    const handleAddExpense = (e) => {
+    const handleAddExpense = async (e) => {
         e.preventDefault();
         if (!amount || !description) return;
 
-        const newExpense = {
-            id: Date.now(),
-            amount: parseFloat(amount),
-            description,
-            category,
-            date: new Date().toLocaleDateString()
+        setAddLoading(true);
+        const newExpenseData = {
+            fields: {
+                amount: { doubleValue: parseFloat(amount) },
+                description: { stringValue: description },
+                category: { stringValue: category },
+                date: { stringValue: new Date().toLocaleDateString() }
+            }
         };
 
-        setExpenses([newExpense, ...expenses]);
-        setAmount('');
-        setDescription('');
-        setCategory('Food');
+        try {
+            const response = await axios.post(FIRESTORE_URL, newExpenseData);
+            if (response.status === 200 || response.status === 201) {
+                const addedDoc = response.data;
+                const newExpense = {
+                    id: addedDoc.name.split('/').pop(),
+                    amount: parseFloat(addedDoc.fields.amount.doubleValue),
+                    description: addedDoc.fields.description.stringValue,
+                    category: addedDoc.fields.category.stringValue,
+                    date: addedDoc.fields.date.stringValue
+                };
+                setExpenses([newExpense, ...expenses]);
+                setAmount('');
+                setDescription('');
+                setCategory('Food');
+            }
+        } catch (err) {
+            console.error('Error adding expense:', err);
+            setMessage({ type: 'error', text: 'Failed to save expense to database.' });
+        } finally {
+            setAddLoading(false);
+        }
     };
 
     if (loading) {
@@ -179,9 +230,15 @@ const Home = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="add-expense-btn">
-                            <PlusCircle size={20} />
-                            <span>Add Expense</span>
+                        <button type="submit" className="add-expense-btn" disabled={addLoading}>
+                            {addLoading ? (
+                                <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
+                            ) : (
+                                <>
+                                    <PlusCircle size={20} />
+                                    <span>Add Expense</span>
+                                </>
+                            )}
                         </button>
                     </form>
                 </div>
@@ -194,7 +251,12 @@ const Home = () => {
                     </h2>
 
                     <div className="expense-list">
-                        {expenses.length > 0 ? (
+                        {listLoading ? (
+                            <div className="empty-state" style={{ borderStyle: 'solid' }}>
+                                <div className="loading-spinner" style={{ width: '30px', height: '30px', margin: '0 auto 20px' }}></div>
+                                <p>Loading your expenses...</p>
+                            </div>
+                        ) : expenses.length > 0 ? (
                             expenses.map(expense => (
                                 <div key={expense.id} className="expense-item">
                                     <div className="expense-info">
