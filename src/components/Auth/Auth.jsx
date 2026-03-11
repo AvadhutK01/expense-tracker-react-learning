@@ -35,7 +35,7 @@ const Auth = () => {
       localStorage.setItem('userId', localId);
 
       console.log('User logged in successfully');
-      
+
       // Navigate to home page
       navigate('/');
     } catch (err) {
@@ -53,8 +53,8 @@ const Auth = () => {
         <div className="auth-header">
           <h1 className="auth-title">{isLogin ? 'Welcome Back' : 'Create Account'}</h1>
           <p className="auth-subtitle">
-            {isLogin 
-              ? 'Enter your credentials to access your account' 
+            {isLogin
+              ? 'Enter your credentials to access your account'
               : 'Join us today and start tracking your expenses'}
           </p>
         </div>
@@ -116,8 +116,8 @@ const Auth = () => {
 
         <div className="auth-toggle">
           {isLogin ? "Don't have an account?" : "Already have an account?"}
-          <span 
-            className="toggle-link" 
+          <span
+            className="toggle-link"
             onClick={() => {
               setIsLogin(!isLogin);
               setError('');
