@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PlusCircle, Wallet, Tag, FileText, List } from 'lucide-react';
+import { PlusCircle, Wallet, Tag, FileText, List, AlertCircle, Edit2, Trash2, CheckCircle } from 'lucide-react';
 import './Home.css';
 
 const Home = () => {
@@ -15,6 +15,7 @@ const Home = () => {
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('Food');
+    const [editingId, setEditingId] = useState(null);
     const [listLoading, setListLoading] = useState(true);
     const [addLoading, setAddLoading] = useState(false);
 
@@ -102,7 +103,7 @@ const Home = () => {
         if (!amount || !description) return;
 
         setAddLoading(true);
-        const newExpenseData = {
+        const expenseData = {
             fields: {
                 amount: { doubleValue: parseFloat(amount) },
                 description: { stringValue: description },
@@ -112,27 +113,82 @@ const Home = () => {
         };
 
         try {
-            const response = await axios.post(FIRESTORE_URL, newExpenseData);
-            if (response.status === 200 || response.status === 201) {
-                const addedDoc = response.data;
-                const newExpense = {
-                    id: addedDoc.name.split('/').pop(),
-                    amount: parseFloat(addedDoc.fields.amount.doubleValue),
-                    description: addedDoc.fields.description.stringValue,
-                    category: addedDoc.fields.category.stringValue,
-                    date: addedDoc.fields.date.stringValue
-                };
-                setExpenses([newExpense, ...expenses]);
-                setAmount('');
-                setDescription('');
-                setCategory('Food');
+            if (editingId) {
+                // Update existing expense
+                const updateUrl = `${FIRESTORE_URL}/${editingId}?updateMask.fieldPaths=amount&updateMask.fieldPaths=description&updateMask.fieldPaths=category&updateMask.fieldPaths=date`;
+                const response = await axios.patch(updateUrl, expenseData);
+
+                if (response.status === 200) {
+                    const updatedExpenses = expenses.map(exp =>
+                        exp.id === editingId ? {
+                            ...exp,
+                            amount: parseFloat(amount),
+                            description: description,
+                            category: category
+                        } : exp
+                    );
+                    setExpenses(updatedExpenses);
+                    setEditingId(null);
+                    setMessage({ type: 'success', text: 'Expense updated successfully!' });
+                }
+            } else {
+                // Add new expense
+                const response = await axios.post(FIRESTORE_URL, expenseData);
+                if (response.status === 200 || response.status === 201) {
+                    const addedDoc = response.data;
+                    const newExpense = {
+                        id: addedDoc.name.split('/').pop(),
+                        amount: parseFloat(addedDoc.fields.amount.doubleValue),
+                        description: addedDoc.fields.description.stringValue,
+                        category: addedDoc.fields.category.stringValue,
+                        date: addedDoc.fields.date.stringValue
+                    };
+                    setExpenses([newExpense, ...expenses]);
+                    setMessage({ type: 'success', text: 'Expense added successfully!' });
+                }
             }
+            setAmount('');
+            setDescription('');
+            setCategory('Food');
         } catch (err) {
-            console.error('Error adding expense:', err);
-            setMessage({ type: 'error', text: 'Failed to save expense to database.' });
+            console.error('Error saving expense:', err);
+            setMessage({ type: 'error', text: 'Failed to save expense.' });
         } finally {
             setAddLoading(false);
         }
+    };
+
+    const handleDeleteExpense = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this expense?')) return;
+
+        try {
+            const response = await axios.delete(`${FIRESTORE_URL}/${id}`);
+            if (response.status === 200 || response.status === 204) {
+                setExpenses(expenses.filter(exp => exp.id !== id));
+                console.log('Expense successfully deleted');
+                setMessage({ type: 'success', text: 'Expense deleted successfully!' });
+            }
+        } catch (err) {
+            console.error('Error deleting expense:', err);
+            setMessage({ type: 'error', text: 'Failed to delete expense.' });
+        }
+    };
+
+    const handleEditClick = (expense) => {
+        setAmount(expense.amount);
+        setDescription(expense.description);
+        setCategory(expense.category);
+        setEditingId(expense.id);
+        setMessage({ type: '', text: '' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setAmount('');
+        setDescription('');
+        setCategory('Food');
+        setMessage({ type: '', text: '' });
     };
 
     if (loading) {
@@ -151,35 +207,56 @@ const Home = () => {
                     <p className="welcome-subtitle">Manage your daily expenses with ease.</p>
                 </section>
 
-                {/* Email Verification Banner */}
-                {!isEmailVerified && (
+                {/* Status Messages */}
+                {message.text && (
                     <div style={{
                         padding: '1rem',
                         borderRadius: '12px',
                         marginBottom: '2rem',
-                        background: message.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                        border: `1px solid ${message.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
-                        color: message.type === 'success' ? '#4ade80' : '#fbbf24',
+                        background: message.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        border: `1px solid ${message.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+                        color: message.type === 'success' ? '#4ade80' : '#f87171',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }}>
+                        <AlertCircle size={18} />
+                        <span>{message.text}</span>
+                    </div>
+                )}
+
+                {/* Email Verification Banner */}
+                {!isEmailVerified && !message.text && (
+                    <div style={{
+                        padding: '1rem',
+                        borderRadius: '12px',
+                        marginBottom: '2rem',
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        border: '1px solid rgba(245, 158, 11, 0.2)',
+                        color: '#fbbf24',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         fontSize: '0.9rem'
                     }}>
-                        <span>{message.text || 'Your email is not verified yet. Please verify for full access.'}</span>
-                        {!message.text && (
-                            <button
-                                onClick={handleSendVerification}
-                                disabled={verifyLoading}
-                                style={{ background: 'none', border: 'none', color: '#fbbf24', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
-                            >
-                                {verifyLoading ? 'Sending...' : 'Verify Email'}
-                            </button>
-                        )}
+                        <span>Your email is not verified yet. Please verify for full access.</span>
+                        <button
+                            onClick={handleSendVerification}
+                            disabled={verifyLoading}
+                            style={{ background: 'none', border: 'none', color: '#fbbf24', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                            {verifyLoading ? 'Sending...' : 'Verify Email'}
+                        </button>
                     </div>
                 )}
 
                 {/* Expense Form */}
-                <div className="expense-form-card">
+                <div className="expense-form-card" style={{ border: editingId ? '1px solid rgba(99, 102, 241, 0.5)' : '' }}>
+                    {editingId && (
+                        <div style={{ color: '#818cf8', fontSize: '0.875rem', fontWeight: 600, marginBottom: '15px' }}>
+                            Editing Expense
+                        </div>
+                    )}
                     <form className="expense-form" onSubmit={handleAddExpense}>
                         <div className="form-group">
                             <label className="form-label">Amount</label>
@@ -230,16 +307,28 @@ const Home = () => {
                             </div>
                         </div>
 
-                        <button type="submit" className="add-expense-btn" disabled={addLoading}>
-                            {addLoading ? (
-                                <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
-                            ) : (
-                                <>
-                                    <PlusCircle size={20} />
-                                    <span>Add Expense</span>
-                                </>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button type="submit" className="add-expense-btn" disabled={addLoading} style={{ flex: 1 }}>
+                                {addLoading ? (
+                                    <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
+                                ) : (
+                                    <>
+                                        {editingId ? <CheckCircle size={20} /> : <PlusCircle size={20} />}
+                                        <span>{editingId ? 'Update' : 'Add Expense'}</span>
+                                    </>
+                                )}
+                            </button>
+                            {editingId && (
+                                <button
+                                    type="button"
+                                    onClick={cancelEdit}
+                                    className="add-expense-btn"
+                                    style={{ background: 'rgba(255, 255, 255, 0.1)', color: 'white', width: 'auto', padding: '0 15px' }}
+                                >
+                                    Cancel
+                                </button>
                             )}
-                        </button>
+                        </div>
                     </form>
                 </div>
 
@@ -266,9 +355,27 @@ const Home = () => {
                                             <span>{expense.date}</span>
                                         </div>
                                     </div>
-                                    <span className="expense-amount">
-                                        ₹{expense.amount.toFixed(2)}
-                                    </span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                        <span className="expense-amount">
+                                            ₹{expense.amount.toFixed(2)}
+                                        </span>
+                                        <div className="expense-actions" style={{ display: 'flex', gap: '10px' }}>
+                                            <button
+                                                onClick={() => handleEditClick(expense)}
+                                                className="action-btn edit"
+                                                title="Edit Expense"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteExpense(expense.id)}
+                                                className="action-btn delete"
+                                                title="Delete Expense"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))
                         ) : (
