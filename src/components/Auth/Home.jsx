@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { PlusCircle, Wallet, Tag, FileText, List } from 'lucide-react';
+import './Home.css';
 
 const Home = () => {
     const [userName, setUserName] = useState('');
@@ -7,6 +9,14 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [verifyLoading, setVerifyLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Expense Form State
+    const [expenses, setExpenses] = useState([]);
+    const [amount, setAmount] = useState('');
+    const [description, setDescription] = useState('');
+    const [category, setCategory] = useState('Food');
+
+    const categories = ['Food', 'Petrol', 'Rent', 'Entertainment', 'Shopping', 'Health', 'Other'];
 
     useEffect(() => {
         fetchUserData();
@@ -56,6 +66,24 @@ const Home = () => {
         }
     };
 
+    const handleAddExpense = (e) => {
+        e.preventDefault();
+        if (!amount || !description) return;
+
+        const newExpense = {
+            id: Date.now(),
+            amount: parseFloat(amount),
+            description,
+            category,
+            date: new Date().toLocaleDateString()
+        };
+
+        setExpenses([newExpense, ...expenses]);
+        setAmount('');
+        setDescription('');
+        setCategory('Food');
+    };
+
     if (loading) {
         return (
             <div className="auth-container" style={{ background: '#0f172a' }}>
@@ -66,58 +94,129 @@ const Home = () => {
 
     return (
         <div style={{ background: '#0f172a', minHeight: 'calc(100vh - 64px)', color: 'white' }}>
-            <main style={{ padding: '40px', textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
-                <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>
-                    Welcome back, {userName}!
-                </h1>
-                <p style={{ color: '#94a3b8', fontSize: '1.1rem', marginBottom: '2rem' }}>
-                    Your dashboard is ready. Start tracking your expenses today.
-                </p>
+            <main className="home-main">
+                <section className="welcome-section">
+                    <h1 className="welcome-title">Welcome back, {userName}!</h1>
+                    <p className="welcome-subtitle">Manage your daily expenses with ease.</p>
+                </section>
 
-                {message.text && (
+                {/* Email Verification Banner */}
+                {!isEmailVerified && (
                     <div style={{
                         padding: '1rem',
                         borderRadius: '12px',
                         marginBottom: '2rem',
-                        background: message.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        border: `1px solid ${message.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
-                        color: message.type === 'success' ? '#4ade80' : '#f87171'
+                        background: message.type === 'success' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        border: `1px solid ${message.type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
+                        color: message.type === 'success' ? '#4ade80' : '#fbbf24',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '0.9rem'
                     }}>
-                        {message.text}
+                        <span>{message.text || 'Your email is not verified yet. Please verify for full access.'}</span>
+                        {!message.text && (
+                            <button
+                                onClick={handleSendVerification}
+                                disabled={verifyLoading}
+                                style={{ background: 'none', border: 'none', color: '#fbbf24', fontWeight: 'bold', cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                                {verifyLoading ? 'Sending...' : 'Verify Email'}
+                            </button>
+                        )}
                     </div>
                 )}
 
-                {!isEmailVerified && !message.text && (
-                    <div style={{
-                        padding: '2rem',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                        marginTop: '2rem'
-                    }}>
-                        <h3 style={{ marginTop: 0 }}>Verify Your Email</h3>
-                        <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>
-                            Your email is not verified yet. Please verify to ensure full access to your account features.
-                        </p>
-                        <button
-                            onClick={handleSendVerification}
-                            disabled={verifyLoading}
-                            className="auth-button"
-                            style={{
-                                width: 'auto',
-                                padding: '12px 32px',
-                                margin: '0 auto',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px'
-                            }}
-                        >
-                            {verifyLoading ? (
-                                <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '2px' }}></div>
-                            ) : 'Verify Email ID'}
+                {/* Expense Form */}
+                <div className="expense-form-card">
+                    <form className="expense-form" onSubmit={handleAddExpense}>
+                        <div className="form-group">
+                            <label className="form-label">Amount</label>
+                            <div style={{ position: 'relative' }}>
+                                <Wallet size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6366f1' }} />
+                                <input
+                                    type="number"
+                                    className="expense-input"
+                                    style={{ paddingLeft: '40px', width: '100%' }}
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Description</label>
+                            <div style={{ position: 'relative' }}>
+                                <FileText size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6366f1' }} />
+                                <input
+                                    type="text"
+                                    className="expense-input"
+                                    style={{ paddingLeft: '40px', width: '100%' }}
+                                    placeholder="What did you spend on?"
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Category</label>
+                            <div style={{ position: 'relative' }}>
+                                <Tag size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6366f1' }} />
+                                <select
+                                    className="expense-select"
+                                    style={{ paddingLeft: '40px', width: '100%' }}
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" className="add-expense-btn">
+                            <PlusCircle size={20} />
+                            <span>Add Expense</span>
                         </button>
+                    </form>
+                </div>
+
+                {/* Expense List */}
+                <section className="expense-list-section">
+                    <h2 className="section-title">
+                        <List size={22} style={{ color: '#6366f1' }} />
+                        Recent Expenses
+                    </h2>
+
+                    <div className="expense-list">
+                        {expenses.length > 0 ? (
+                            expenses.map(expense => (
+                                <div key={expense.id} className="expense-item">
+                                    <div className="expense-info">
+                                        <span className="expense-desc">{expense.description}</span>
+                                        <div className="expense-meta">
+                                            <span className="category-tag">{expense.category}</span>
+                                            <span>{expense.date}</span>
+                                        </div>
+                                    </div>
+                                    <span className="expense-amount">
+                                        ₹{expense.amount.toFixed(2)}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state">
+                                <PlusCircle size={40} style={{ marginBottom: '15px' }} />
+                                <p>No expenses added yet. Start by adding your first expense above!</p>
+                            </div>
+                        )}
                     </div>
-                )}
+                </section>
             </main>
         </div>
     );
