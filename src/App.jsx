@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import Auth from './components/Auth/Auth';
@@ -9,6 +10,15 @@ import Header from './components/Header/Header';
 const AppContent = () => {
   const location = useLocation();
   const isAuthenticated = useSelector(state => state.auth.isLoggedIn);
+  const darkMode = useSelector(state => state.theme.darkMode);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }, [darkMode]);
 
   return (
     <>

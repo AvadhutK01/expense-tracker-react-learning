@@ -3,6 +3,9 @@ import axios from 'axios';
 import { PlusCircle, Wallet, Tag, FileText, List, AlertCircle, Edit2, Trash2, CheckCircle, Crown } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { expensesActions } from '../../store/expensesSlice';
+import { authActions } from '../../store/authSlice';
+import { themeActions } from '../../store/themeSlice';
+import { Download, Moon, Sun } from 'lucide-react';
 import './Home.css';
 
 const Home = () => {
@@ -15,7 +18,8 @@ const Home = () => {
     // Expense Form State
     // Expense State from Redux
     const expenses = useSelector(state => state.expenses.items);
-    const token = useSelector(state => state.auth.token);
+    const { token, isPremium } = useSelector(state => state.auth);
+    const darkMode = useSelector(state => state.theme.darkMode);
     const dispatch = useDispatch();
 
     const [amount, setAmount] = useState('');
@@ -201,55 +205,139 @@ const Home = () => {
         setMessage({ type: '', text: '' });
     };
 
+    const handleActivatePremium = () => {
+        dispatch(authActions.activatePremium());
+        setMessage({ type: 'success', text: 'Premium activated! Features unlocked.' });
+    };
+
+    const downloadCSV = () => {
+        if (expenses.length === 0) return;
+
+        const headers = ['Amount', 'Description', 'Category', 'Date'];
+        const csvRows = [
+            headers.join(','),
+            ...expenses.map(exp => [
+                exp.amount,
+                `"${exp.description}"`,
+                exp.category,
+                // Ensure date is treated as text in Excel to avoid ##### or bad formatting
+                `"${exp.date}"`
+            ].join(','))
+        ];
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob(['\ufeff', csvString], { type: 'text/csv;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'expenses.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
     if (loading) {
         return (
-            <div className="auth-container" style={{ background: '#0f172a' }}>
+            <div className="auth-container">
                 <div className="loading-spinner" style={{ width: '40px', height: '40px' }}></div>
             </div>
         );
     }
 
     return (
-        <div style={{ background: '#0f172a', minHeight: 'calc(100vh - 64px)', color: 'white' }}>
+        <div className="home-container">
             <main className="home-main">
                 <section className="welcome-section">
                     <h1 className="welcome-title">Welcome back, {userName}!</h1>
                     <p className="welcome-subtitle">Manage your daily expenses with ease.</p>
                 </section>
 
-                {/* Premium Button */}
-                {expenses.reduce((total, exp) => total + exp.amount, 0) > 10000 && (
+                {/* Premium Banner - Only show if total > 10000 AND not yet premium */}
+                {expenses.reduce((total, exp) => total + exp.amount, 0) > 10000 && !isPremium && (
                     <div style={{
                         marginBottom: '2rem',
                         padding: '1.5rem',
                         borderRadius: '16px',
-                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
-                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
+                        border: '1px solid var(--primary)',
                         textAlign: 'center',
                         backdropFilter: 'blur(10px)'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
                             <Crown size={24} style={{ color: '#fbbf24' }} />
-                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>Upgrade to Premium</h3>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-color)' }}>Upgrade to Premium</h3>
                         </div>
-                        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '15px' }}>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '15px' }}>
                             Your total expenses have exceeded ₹10,000. Unlock exclusive features with Premium!
                         </p>
-                        <button style={{
-                            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
-                        }}>
+                        <button
+                            onClick={handleActivatePremium}
+                            style={{
+                                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '12px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
+                            }}
+                        >
                             <Crown size={18} />
                             Activate Premium
+                        </button>
+                    </div>
+                )}
+
+                {/* Premium Toolbar */}
+                {isPremium && (
+                    <div style={{
+                        display: 'flex',
+                        gap: '15px',
+                        marginBottom: '2rem',
+                        justifyContent: 'center'
+                    }}>
+                        <button
+                            onClick={() => dispatch(themeActions.toggleTheme())}
+                            className="premium-action-btn"
+                            style={{
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--card-border)',
+                                color: 'var(--text-color)',
+                                padding: '0.75rem 1.25rem',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            {darkMode ? <Sun size={18} style={{ color: '#fbbf24' }} /> : <Moon size={18} style={{ color: '#6366f1' }} />}
+                            <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                        </button>
+
+                        <button
+                            onClick={downloadCSV}
+                            className="premium-action-btn"
+                            style={{
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--card-border)',
+                                color: 'var(--text-color)',
+                                padding: '0.75rem 1.25rem',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Download size={18} />
+                            Download CSV
                         </button>
                     </div>
                 )}

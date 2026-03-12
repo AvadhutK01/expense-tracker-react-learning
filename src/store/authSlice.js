@@ -9,6 +9,7 @@ const authSlice = createSlice({
     token: initialToken,
     userId: initialUserId,
     isLoggedIn: !!initialToken,
+    isPremium: localStorage.getItem('isPremium') === 'true',
   },
   reducers: {
     login: (state, action) => {
@@ -22,8 +23,14 @@ const authSlice = createSlice({
       state.token = null;
       state.userId = null;
       state.isLoggedIn = false;
+      state.isPremium = false;
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
+      localStorage.removeItem('isPremium');
+    },
+    activatePremium: (state) => {
+      state.isPremium = true;
+      localStorage.setItem('isPremium', 'true');
     },
   },
 });

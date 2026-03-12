@@ -1,13 +1,45 @@
+:root {
+  --bg-color: #f8fafc;
+  --text-color: #1e293b;
+  --text-muted: #64748b;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #1e293b;
+  --header-bg: rgba(255, 255, 255, 0.8);
+  --header-border: #e2e8f0;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --success: #22c55e;
+  --danger: #ef4444;
+}
+
+.dark-theme {
+  --bg-color: #0f172a;
+  --text-color: #f8fafc;
+  --text-muted: #94a3b8;
+  --card-bg: #1e293b;
+  --card-border: #334155;
+  --input-bg: #0f172a;
+  --input-border: #334155;
+  --input-text: #f8fafc;
+  --header-bg: rgba(15, 23, 42, 0.8);
+  --header-border: #334155;
+}
+
 * {
   box-sizing: border-box;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-color: #0f172a;
-  /* Match the start of the auth gradient */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 #root {

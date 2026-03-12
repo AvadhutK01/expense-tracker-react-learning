@@ -1,31 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-:root {
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-}
+/* Using global theme variables */
 
 .auth-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-gradient);
+  background-color: var(--bg-color);
   font-family: 'Inter', sans-serif;
-  color: var(--text-main);
+  color: var(--text-color);
   padding: 20px;
 }
 
 .auth-card {
-  background: var(--glass-bg);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--card-border);
   border-radius: 24px;
   padding: 40px;
   width: 100%;
@@ -35,8 +27,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-header {
@@ -92,11 +91,11 @@
 
 .auth-input {
   width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--glass-border);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
   border-radius: 12px;
   padding: 12px 12px 12px 42px;
-  color: white;
+  color: var(--text-color);
   font-size: 1rem;
   transition: all 0.2s ease;
   outline: none;
@@ -183,5 +182,7 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }

@@ -14,8 +14,8 @@
 }
 
 .profile-modal {
-    background: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 20px;
     padding: 30px;
     width: 100%;
@@ -46,7 +46,7 @@
 .modal-header h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: white;
+    color: var(--text-color);
 }
 
 .close-btn {
@@ -77,8 +77,8 @@
 
 .cancel-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
+    border: 1px solid var(--card-border);
+    color: var(--text-muted);
     padding: 10px 20px;
     border-radius: 10px;
     cursor: pointer;
