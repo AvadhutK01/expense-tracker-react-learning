@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { PlusCircle, Wallet, Tag, FileText, List, AlertCircle, Edit2, Trash2, CheckCircle } from 'lucide-react';
+import { PlusCircle, Wallet, Tag, FileText, List, AlertCircle, Edit2, Trash2, CheckCircle, Crown } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { expensesActions } from '../../store/expensesSlice';
 import './Home.css';
 
 const Home = () => {
@@ -11,7 +13,11 @@ const Home = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
 
     // Expense Form State
-    const [expenses, setExpenses] = useState([]);
+    // Expense State from Redux
+    const expenses = useSelector(state => state.expenses.items);
+    const token = useSelector(state => state.auth.token);
+    const dispatch = useDispatch();
+
     const [amount, setAmount] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('Food');
@@ -31,7 +37,6 @@ const Home = () => {
     }, []);
 
     const fetchUserData = async () => {
-        const token = localStorage.getItem('token');
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
 
         try {
@@ -51,7 +56,9 @@ const Home = () => {
     const fetchExpenses = async () => {
         setListLoading(true);
         try {
-            const response = await axios.get(FIRESTORE_URL);
+            const response = await axios.get(FIRESTORE_URL, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (response.data.documents) {
                 const loadedExpenses = response.data.documents.map(doc => {
                     const fields = doc.fields;
@@ -63,7 +70,7 @@ const Home = () => {
                         date: fields.date?.stringValue || ''
                     };
                 });
-                setExpenses(loadedExpenses);
+                dispatch(expensesActions.setExpenses(loadedExpenses));
             }
         } catch (err) {
             console.error('Error fetching expenses:', err);
@@ -75,7 +82,6 @@ const Home = () => {
     const handleSendVerification = async () => {
         setVerifyLoading(true);
         setMessage({ type: '', text: '' });
-        const token = localStorage.getItem('token');
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
 
         try {
@@ -116,24 +122,27 @@ const Home = () => {
             if (editingId) {
                 // Update existing expense
                 const updateUrl = `${FIRESTORE_URL}/${editingId}?updateMask.fieldPaths=amount&updateMask.fieldPaths=description&updateMask.fieldPaths=category&updateMask.fieldPaths=date`;
-                const response = await axios.patch(updateUrl, expenseData);
+                const response = await axios.patch(updateUrl, expenseData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
                 if (response.status === 200) {
-                    const updatedExpenses = expenses.map(exp =>
-                        exp.id === editingId ? {
-                            ...exp,
-                            amount: parseFloat(amount),
-                            description: description,
-                            category: category
-                        } : exp
-                    );
-                    setExpenses(updatedExpenses);
+                    const updatedExpense = {
+                        id: editingId,
+                        amount: parseFloat(amount),
+                        description: description,
+                        category: category,
+                        date: expenses.find(exp => exp.id === editingId)?.date || new Date().toLocaleDateString()
+                    };
+                    dispatch(expensesActions.updateExpense(updatedExpense));
                     setEditingId(null);
                     setMessage({ type: 'success', text: 'Expense updated successfully!' });
                 }
             } else {
                 // Add new expense
-                const response = await axios.post(FIRESTORE_URL, expenseData);
+                const response = await axios.post(FIRESTORE_URL, expenseData, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
                 if (response.status === 200 || response.status === 201) {
                     const addedDoc = response.data;
                     const newExpense = {
@@ -143,7 +152,7 @@ const Home = () => {
                         category: addedDoc.fields.category.stringValue,
                         date: addedDoc.fields.date.stringValue
                     };
-                    setExpenses([newExpense, ...expenses]);
+                    dispatch(expensesActions.addExpense(newExpense));
                     setMessage({ type: 'success', text: 'Expense added successfully!' });
                 }
             }
@@ -160,11 +169,12 @@ const Home = () => {
 
     const handleDeleteExpense = async (id) => {
         if (!window.confirm('Are you sure you want to delete this expense?')) return;
-
         try {
-            const response = await axios.delete(`${FIRESTORE_URL}/${id}`);
+            const response = await axios.delete(`${FIRESTORE_URL}/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             if (response.status === 200 || response.status === 204) {
-                setExpenses(expenses.filter(exp => exp.id !== id));
+                dispatch(expensesActions.removeExpense(id));
                 console.log('Expense successfully deleted');
                 setMessage({ type: 'success', text: 'Expense deleted successfully!' });
             }
@@ -206,6 +216,43 @@ const Home = () => {
                     <h1 className="welcome-title">Welcome back, {userName}!</h1>
                     <p className="welcome-subtitle">Manage your daily expenses with ease.</p>
                 </section>
+
+                {/* Premium Button */}
+                {expenses.reduce((total, exp) => total + exp.amount, 0) > 10000 && (
+                    <div style={{
+                        marginBottom: '2rem',
+                        padding: '1.5rem',
+                        borderRadius: '16px',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
+                        border: '1px solid rgba(99, 102, 241, 0.2)',
+                        textAlign: 'center',
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
+                            <Crown size={24} style={{ color: '#fbbf24' }} />
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'white' }}>Upgrade to Premium</h3>
+                        </div>
+                        <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', marginBottom: '15px' }}>
+                            Your total expenses have exceeded ₹10,000. Unlock exclusive features with Premium!
+                        </p>
+                        <button style={{
+                            background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)'
+                        }}>
+                            <Crown size={18} />
+                            Activate Premium
+                        </button>
+                    </div>
+                )}
 
                 {/* Status Messages */}
                 {message.text && (

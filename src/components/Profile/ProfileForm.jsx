@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
 import { User, Image, X, Save, AlertCircle } from 'lucide-react';
 import './ProfileForm.css';
 
 const ProfileForm = ({ isOpen, onClose, userData, onUpdate }) => {
+    const token = useSelector(state => state.auth.token);
     const [displayName, setDisplayName] = useState('');
     const [photoUrl, setPhotoUrl] = useState('');
     const [loading, setLoading] = useState(false);
@@ -19,7 +21,6 @@ const ProfileForm = ({ isOpen, onClose, userData, onUpdate }) => {
 
     const fetchCurrentData = async () => {
         setFetching(true);
-        const token = localStorage.getItem('token');
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
 
         try {
@@ -46,7 +47,6 @@ const ProfileForm = ({ isOpen, onClose, userData, onUpdate }) => {
         setLoading(true);
         setError('');
 
-        const token = localStorage.getItem('token');
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
 
         try {

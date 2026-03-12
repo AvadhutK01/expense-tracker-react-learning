@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { Mail, Lock, LogIn, UserPlus, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { authActions } from '../../store/authSlice';
 import './Auth.css';
 
 const Auth = () => {
@@ -13,6 +15,7 @@ const Auth = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -55,9 +58,11 @@ const Auth = () => {
 
       const { idToken, localId } = response.data;
 
-      // Store token in local storage
-      localStorage.setItem('token', idToken);
-      localStorage.setItem('userId', localId);
+      // Dispatch login action
+      dispatch(authActions.login({
+        token: idToken,
+        userId: localId
+      }));
 
       console.log('User logged in successfully');
 

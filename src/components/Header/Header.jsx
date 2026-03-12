@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { authActions } from '../../store/authSlice';
 import ProfileIcon from '../Profile/ProfileIcon';
 import ProfileForm from '../Profile/ProfileForm';
 import './Header.css';
@@ -12,13 +14,14 @@ const Header = () => {
     });
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const token = useSelector(state => state.auth.token);
+    const dispatch = useDispatch();
 
     useEffect(() => {
         fetchUserData();
     }, []);
 
     const fetchUserData = async () => {
-        const token = localStorage.getItem('token');
         if (!token) return;
 
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
@@ -48,8 +51,7 @@ const Header = () => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
+        dispatch(authActions.logout());
         window.location.reload();
     };
 
