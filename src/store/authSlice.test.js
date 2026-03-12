@@ -27,4 +27,12 @@ describe('authSlice', () => {
         expect(state.isPremium).toBe(false);
         expect(localStorage.getItem('token')).toBe(null);
     });
+
+    it('11. should handle activatePremium', () => {
+        const initialState = { token: 'token', userId: 'uid', isLoggedIn: true, isPremium: false };
+        const state = authReducer(initialState, authActions.activatePremium());
+
+        expect(state.isPremium).toBe(true);
+        expect(localStorage.getItem('isPremium')).toBe('true');
+    });
 });
