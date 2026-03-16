@@ -23,7 +23,7 @@ const Auth = () => {
     setSuccess('');
     setLoading(true);
 
-    const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
+    const url = `${import.meta.env.VITE_AUTH_BASE_URL}:sendOobCode?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
     try {
       await axios.post(url, {
@@ -46,8 +46,8 @@ const Auth = () => {
     setLoading(true);
 
     const url = isLogin
-      ? 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg'
-      : 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg';
+      ? `${import.meta.env.VITE_AUTH_BASE_URL}:signInWithPassword?key=${import.meta.env.VITE_FIREBASE_API_KEY}`
+      : `${import.meta.env.VITE_AUTH_BASE_URL}:signUp?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
     try {
       const response = await axios.post(url, {
@@ -58,7 +58,6 @@ const Auth = () => {
 
       const { idToken, localId } = response.data;
 
-      // Dispatch login action
       dispatch(authActions.login({
         token: idToken,
         userId: localId
@@ -66,7 +65,6 @@ const Auth = () => {
 
       console.log('User logged in successfully');
 
-      // Navigate to home page
       navigate('/');
     } catch (err) {
       const message = err.response?.data?.error?.message || 'An error occurred. Please try again.';

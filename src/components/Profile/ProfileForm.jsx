@@ -21,7 +21,7 @@ const ProfileForm = ({ isOpen, onClose, userData, onUpdate }) => {
 
     const fetchCurrentData = async () => {
         setFetching(true);
-        const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
+        const url = `${import.meta.env.VITE_AUTH_BASE_URL}:lookup?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
         try {
             const response = await axios.post(url, { idToken: token });
@@ -32,7 +32,6 @@ const ProfileForm = ({ isOpen, onClose, userData, onUpdate }) => {
             }
         } catch (err) {
             console.error('Error fetching current profile data:', err);
-            // Fallback to prop data if API fails
             setDisplayName(userData.displayName || '');
             setPhotoUrl(userData.photoUrl || '');
         } finally {
@@ -47,7 +46,7 @@ const ProfileForm = ({ isOpen, onClose, userData, onUpdate }) => {
         setLoading(true);
         setError('');
 
-        const url = `https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
+        const url = `${import.meta.env.VITE_AUTH_BASE_URL}:update?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
         try {
             const response = await axios.post(url, {

@@ -24,7 +24,7 @@ const Header = () => {
     const fetchUserData = async () => {
         if (!token) return;
 
-        const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
+        const url = `${import.meta.env.VITE_AUTH_BASE_URL}:lookup?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
         try {
             const response = await axios.post(url, { idToken: token });

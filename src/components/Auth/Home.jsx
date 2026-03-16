@@ -15,8 +15,6 @@ const Home = () => {
     const [verifyLoading, setVerifyLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    // Expense Form State
-    // Expense State from Redux
     const expenses = useSelector(state => state.expenses.items);
     const { token, isPremium } = useSelector(state => state.auth);
     const darkMode = useSelector(state => state.theme.darkMode);
@@ -30,7 +28,7 @@ const Home = () => {
     const [addLoading, setAddLoading] = useState(false);
 
     const categories = ['Food', 'Petrol', 'Rent', 'Entertainment', 'Shopping', 'Health', 'Other'];
-    const FIRESTORE_URL = `https://firestore.googleapis.com/v1/projects/sh-p-f50d3/databases/(default)/documents/expense`;
+    const FIRESTORE_URL = import.meta.env.VITE_FIRESTORE_BASE_URL;
 
     useEffect(() => {
         const init = async () => {
@@ -41,7 +39,7 @@ const Home = () => {
     }, []);
 
     const fetchUserData = async () => {
-        const url = `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
+        const url = `${import.meta.env.VITE_AUTH_BASE_URL}:lookup?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
         try {
             const response = await axios.post(url, { idToken: token });
@@ -60,7 +58,7 @@ const Home = () => {
     const fetchExpenses = async () => {
         setListLoading(true);
         try {
-            const response = await axios.get(FIRESTORE_URL, {
+            const response = await axios.get(`${FIRESTORE_URL}/expense`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.documents) {
@@ -86,7 +84,7 @@ const Home = () => {
     const handleSendVerification = async () => {
         setVerifyLoading(true);
         setMessage({ type: '', text: '' });
-        const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=AIzaSyCwDsvQguErZLZzPuUX33gtYeXV8tUUFWg`;
+        const url = `${import.meta.env.VITE_AUTH_BASE_URL}:sendOobCode?key=${import.meta.env.VITE_FIREBASE_API_KEY}`;
 
         try {
             await axios.post(url, {
@@ -124,7 +122,6 @@ const Home = () => {
 
         try {
             if (editingId) {
-                // Update existing expense
                 const updateUrl = `${FIRESTORE_URL}/${editingId}?updateMask.fieldPaths=amount&updateMask.fieldPaths=description&updateMask.fieldPaths=category&updateMask.fieldPaths=date`;
                 const response = await axios.patch(updateUrl, expenseData, {
                     headers: { Authorization: `Bearer ${token}` }
@@ -143,8 +140,7 @@ const Home = () => {
                     setMessage({ type: 'success', text: 'Expense updated successfully!' });
                 }
             } else {
-                // Add new expense
-                const response = await axios.post(FIRESTORE_URL, expenseData, {
+                const response = await axios.post(`${FIRESTORE_URL}/expense`, expenseData, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 if (response.status === 200 || response.status === 201) {
@@ -220,7 +216,6 @@ const Home = () => {
                 exp.amount,
                 `"${exp.description}"`,
                 exp.category,
-                // Ensure date is treated as text in Excel to avoid ##### or bad formatting
                 `"${exp.date}"`
             ].join(','))
         ];
@@ -253,7 +248,6 @@ const Home = () => {
                     <p className="welcome-subtitle">Manage your daily expenses with ease.</p>
                 </section>
 
-                {/* Premium Banner - Only show if total > 10000 AND not yet premium */}
                 {expenses.reduce((total, exp) => total + exp.amount, 0) > 10000 && !isPremium && (
                     <div style={{
                         marginBottom: '2rem',
@@ -293,7 +287,6 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Premium Toolbar */}
                 {isPremium && (
                     <div style={{
                         display: 'flex',
@@ -342,7 +335,6 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Status Messages */}
                 {message.text && (
                     <div style={{
                         padding: '1rem',
@@ -360,7 +352,6 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Email Verification Banner */}
                 {!isEmailVerified && !message.text && (
                     <div style={{
                         padding: '1rem',
@@ -385,7 +376,6 @@ const Home = () => {
                     </div>
                 )}
 
-                {/* Expense Form */}
                 <div className="expense-form-card" style={{ border: editingId ? '1px solid rgba(99, 102, 241, 0.5)' : '' }}>
                     {editingId && (
                         <div style={{ color: '#818cf8', fontSize: '0.875rem', fontWeight: 600, marginBottom: '15px' }}>
@@ -467,7 +457,6 @@ const Home = () => {
                     </form>
                 </div>
 
-                {/* Expense List */}
                 <section className="expense-list-section">
                     <h2 className="section-title">
                         <List size={22} style={{ color: '#6366f1' }} />
